@@ -1,0 +1,40 @@
+PCF8591是8位温度串行iic温度转换器
+精度0-255 开发板上0-5v
+
+**iic通讯开始** 
+
+**首先从机发送地址**
+从机地址格式为
+1 0 0 1 A2 A1 A0 R/W
+ /must//programable/
+开发板上 A2 A1 A0接地 可以简化为
+0x90写
+0x91读
+
+**发送功能控制字节**
+
+控制字节格式与功能选择
+
+0 x y y 0 w z z
+
+0为固定格式
+//x 0模拟输出失能 1模拟输出使能
+//y y4个输入通道的模式选择
+//00 AIN0 AIN1 AIN2 AIN3通道独立输出到channel0=AIN0 channel1=AIN1 channel2=AIN2 channel3=AIN3（最常用）
+//01 AIN0 AIN1 AIN2 AIN3通道差分输出到channel0=AIN0-AIN3 channel1=AIN1-AIN3 channel2=AIN2-AIN3
+//10 AIN0 AIN1 AIN2 AIN3通道混合输出到channel0=AIN0 channel1=AIN1 channel=AIN2-AIN3
+//11 AIN0 AIN1 AIN2 AIN3双差分采集输出到channel0=AIN0-AIN1 channel1=AIN2-AIN3
+
+//w 0自动递增标志位关闭 1自动递增标志位开启 此功能为当PCF8591采集完一次一个通道channel，就依次循环采集下一个通道channel，类似多个传感器轮询的机制（平常不使用）
+
+//z z 选择通道的模拟输入
+//00 channel0
+//01 channel1
+//10 channel2
+//11 channel3
+//注 如果w=1 就不用设置channel 芯片采用channel0 channel1 channel2 channel3（独立模式下）轮询机制
+
+附：
+**PCF8591功能命令图**
+**PCF8591接线图**
+**PCF8591地址指令图**
