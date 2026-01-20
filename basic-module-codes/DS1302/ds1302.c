@@ -1,3 +1,7 @@
+//注意单片机上电电平不稳定建议初始要
+P13=0;//（必须），上电DS1302先失能
+P17=0;//（选择），时钟引脚初始化为低电平
+P23=0;//（选择），数据引脚初始化为低电平
 static unsigned char hour=0;
 static unsigned char minute=0;
 static unsigned char second=0;
