@@ -1,0 +1,314 @@
+#include"seg.h"
+code unsigned char segcode[17]={0xc0,0xf9,0xa4,0xb0,0x99,0x92,0x82,0xf8,0x80,0x90,0x88,0x83,0xc6,0xa1,0x86,0x8e,0xFF};
+// 0 1 2 3 4 5 6 7 8 9 A B C D E F 不显示(0xFF)
+void Segdisplay(unsigned char sel,unsigned char Byte,unsigned char dot)//位选加数字加是否显示小数点
+{//位选1-8 数字0-16 合法性判断
+	if((sel==0)|(sel>8)|(Byte>16)|(dot>1))
+	{
+		return;
+	}
+	P2=(P2&0x1F)|0x00;
+	P0=0x01<<(sel-1);
+	US_Delay(2);
+	P2=(P2&0x1F)|0xC0;
+	US_Delay(2);
+	P2=(P2&0x1F)|0x00;
+	P0=segcode[Byte];
+	if(dot)
+	{
+		P07=0;
+	}
+	US_Delay(1);
+	P2=(P2&0x1F)|0xE0;
+	MS_Delay(2);
+	P0=0xFF;
+	P2=(P2&0x1F)|0x00;
+}
+
+void Time_Seg(unsigned char delay)//时钟数码管显示
+{
+	unsigned char break_flag=0;//退出标志位
+	while(1)
+	{
+		Get_Time();//判断是否到达闹钟想起条件
+		if((pre_hour==hour)&&(pre_minute==minute)&&(pre_second==second)&&(Clock_flag==1))
+		{
+			Clock_ON=1;//闹钟已触发标志位置1
+			Buffer_and_Relay_control(1,0);
+		}
+		now=currenttim;
+		while(currenttim-now<delay)
+		{
+			Segdisplay(1,hour/10,0);
+			Segdisplay(2,hour%10,0);
+			Segdisplay(3,16,0);
+			Segdisplay(4,minute/10,0);
+			Segdisplay(5,minute%10,0);
+			Segdisplay(6,16,0);
+			Segdisplay(7,second/10,0);
+			Segdisplay(8,second%10,0);
+			if(scan_matrix())
+			{
+				break_flag=1;
+				break;
+			}
+		}
+		if(break_flag==1)
+		{
+			break;
+		}
+	}
+}
+
+void Tempature_Seg(unsigned char delay)//温度数码管显示
+{//delay表示显示的延时时间 影响采用速度
+	unsigned char break_flag=0;//退出标志位
+	float tempature=0;
+	while(1)
+	{
+		tempature=Get_tempature();
+		if(temp_flag==1)//温度报警模式已经开启
+		{
+			switch(alarm_mode)
+			{
+				case 0://高温报警
+				{
+					if(tempature>=high_tempature)
+					{
+						Buffer_and_Relay_control(0,1);
+						temp_ON=1;//温度报警已触发标志位
+					}
+					else
+					{
+						Buffer_and_Relay_control(0,0);
+						temp_ON=0;//温度报警已熄灭标志位
+					}
+					break;
+				}
+				case 1://低温报警
+				{
+					if(tempature<=low_tempature)
+					{
+						Buffer_and_Relay_control(0,1);
+						temp_ON=1;//温度报警已触发标志位
+					}
+					else
+					{
+						Buffer_and_Relay_control(0,0);
+						temp_ON=0;//温度报警已熄灭标志位
+					}
+					break;
+				}
+				case 2://高低温报警
+				{
+					if((tempature>=high_tempature)|(tempature<=low_tempature))
+					{
+						Buffer_and_Relay_control(0,1);
+						temp_ON=1;//温度报警已触发标志位
+					}
+					else
+					{
+						Buffer_and_Relay_control(0,0);
+						temp_ON=0;//温度报警熄灭标志位
+					}
+					break;
+				}
+				default:
+				{
+					Buffer_and_Relay_control(0,0);
+					break;
+				}
+			}
+		}
+		now=currenttim;
+		while(currenttim-now<delay)
+		{
+			Segdisplay(1,12,0);
+			Segdisplay(2,16,0);
+			Segdisplay(3,16,0);
+			Segdisplay(4,16,0);
+			Segdisplay(5,(int)((tempature))/10,0);
+			Segdisplay(6,((int)(tempature))%10,1);
+			Segdisplay(7,((int)(tempature*10))%10,0);
+			Segdisplay(8,((int)(tempature*100))%10,0);
+			if(scan_matrix())
+			{
+				break_flag=1;
+				break;
+			}
+		}
+		if(break_flag)
+		{
+			break;
+		}
+	}
+}
+
+void Volt_Seg(unsigned char mode,unsigned char delay)//电压数码管显示
+{//delay表示显示的延时时间 影响采用速度
+	unsigned char V=0;
+	unsigned char break_flag=0;
+	while(1)
+	{
+		V=PCF8591(mode);
+		if(V_flag==1)//电压报警模式已经开启
+		{
+			switch(V_alarm_mode)
+			{
+				case 0://高压报警
+				{
+					if(V>=V_max)
+					{
+						Buffer_and_Relay_control(0,1);
+						V_ON=1;//电压报警已触发标志位
+					}
+					else
+					{
+						Buffer_and_Relay_control(0,0);
+						V_ON=0;//电压报警熄灭标志位
+					}
+					break;
+				}
+				case 1://低压报警
+				{
+					if(V<=V_min)
+					{
+						Buffer_and_Relay_control(0,1);
+						V_ON=1;//电压报警已触发标志位
+					}
+					else
+					{
+						Buffer_and_Relay_control(0,0);
+						V_ON=0;//电压报警熄灭标志位
+					}
+					break;
+				}
+				case 2://高低压报警
+				{
+					if((V>=V_max)|(V<=V_min))
+					{
+						Buffer_and_Relay_control(0,1);
+						V_ON=1;//电压报警已触发标志位
+					}
+					else
+					{
+						Buffer_and_Relay_control(0,0);
+						V_ON=0;//电压报警熄灭标志位
+					}
+					break;
+				}
+				default:
+				{
+					Buffer_and_Relay_control(0,0);
+					break;
+				}
+			}
+		}
+		now=currenttim;
+		while(currenttim-now<delay)
+		{
+			Segdisplay(1,14,0);
+			Segdisplay(2,16,0);
+			Segdisplay(3,16,0);
+			Segdisplay(4,16,0);
+			Segdisplay(5,16,0);
+			Segdisplay(6,(V/100)%10,0);
+			Segdisplay(7,(V/10)%10,0);
+			Segdisplay(8,V%10,0);
+			if(scan_matrix())
+			{
+				break_flag=1;
+				break;
+			}
+		}
+		if(break_flag)
+		{
+			break;
+		}
+	}
+}
+
+void distance_Seg(unsigned char delay)//距离数码管显示
+{
+	float distance=0.0f;
+	unsigned char break_flag=0;
+	while(1)
+	{
+		distance=Get_distance();
+		if(distance_flag==1)//距离报警模式已经开启
+		{
+			switch(distance_alarm_mode)
+			{
+				case 0://远距离报警
+				{
+					if(distance>=max_distance)
+					{
+						Buffer_and_Relay_control(0,1);
+						distance_ON=1;//距离报警触发标志位
+					}
+					else
+					{
+						Buffer_and_Relay_control(0,0);
+						distance_ON=0;//距离报警熄灭标志位
+					}
+					break;
+				}
+				case 1://近距离报警
+				{
+					if(distance<=min_distance)
+					{
+						Buffer_and_Relay_control(0,1);
+						distance_ON=1;//距离报警触发标志位
+					}
+					else
+					{
+						Buffer_and_Relay_control(0,0);
+						distance_ON=0;//距离报警熄灭标志位
+					}
+					break;
+				}
+				case 2://近远距报警
+				{
+					if((distance>=max_distance)|(distance<=min_distance))
+					{
+						Buffer_and_Relay_control(0,1);
+						distance_ON=1;//距离报警触发标志位
+					}
+					else
+					{
+						Buffer_and_Relay_control(0,0);
+						distance_ON=0;//距离报警熄灭标志位
+					}
+					break;
+				}
+				default:
+				{
+					Buffer_and_Relay_control(0,0);
+					distance_ON=0;
+					break;
+				}
+			}
+		}
+		now=currenttim;
+		while(currenttim-now<delay)
+		{
+			Segdisplay(1,13,0);
+			Segdisplay(2,16,0);
+			Segdisplay(3,16,0);
+			Segdisplay(4,16,0);
+			Segdisplay(5,(((int)(distance))/10)%10,0);
+			Segdisplay(6,((int)(distance))%10,1);
+			Segdisplay(7,((int)(distance*10))%10,0);
+			Segdisplay(8,((int)(distance*100))%10,0);
+			if(scan_matrix())
+			{
+				break_flag=1;
+				break;
+			}
+		}
+		if(break_flag)
+		{
+			break;
+		}
+	}
+}
