@@ -1,6 +1,7 @@
 void DS1302_SendByte(unsigned char addr,unsigned char Byte)
 {
 	unsigned char i=0;//循环变量声明
+	P13=0;//首先失能
 	P23=0;//数据IO口初始化为低电平
 	P17=0;//时钟初始化为低电平
 	P13=1;//必须在数据IO口，时钟引脚初始化完成后使能，否则会出现误动作
@@ -34,6 +35,7 @@ unsigned char DS1302_ReadByte(unsigned char addr)
 {
 	unsigned char i=0;//循环变量声明
 	unsigned char temp=0;//接受变量
+	P13=0;//首先失能
 	P23=0;//数据IO口初始化为低电平
 	P17=0;//时钟初始化为低电平
 	P13=1;//必须在数据IO口，时钟引脚初始化完成后使能，否则会出现误动作
