@@ -1,0 +1,50 @@
+LED显示驱动
+void LED_display(unsigned char Byte)
+{
+	P2=(P2&0x1F)|0x00;
+	P0=~Byte;
+	US_Delay(1);
+	P2=(P2&0x1F)|0x80;
+	US_Delay(3);
+	P2=(P2&0x1F)|0x00;
+}
+while(1)
+{
+  //LED动作
+		if(currenttim-led_now>200)//200ms周期震荡
+		{
+			if(led_temp==0)//LED_temp 0-1周期乒乓切换
+			{
+				led_temp=1;
+			}
+			else//确保不切换到非法状态
+			{
+				led_temp=0;
+			}
+			led_now=currenttim;//更新LED周期震荡时间戳
+		}
+		if(seg_mode1==0)//当前位于频率显示界面
+		{
+			Led1=led_temp;//LED1以200ms周期切换亮灭状态
+		}
+		else
+		{
+			Led1=0;//LED1熄灭
+		}
+		if(Feq_alarm==1)//频率超限
+		{
+			Led2=led_temp;//LED2以200ms周期切换亮灭状态
+		}
+		else//没有超限，判断频率状态的正确性
+		{
+			if(Feq_error_flag==1)//频率数据错误
+			{
+				Led2=1;//LED2点亮
+			}
+			else
+			{
+				Led2=0;//LED2熄灭
+			}
+		}
+		LED_display((0x01&Led1)|((0x01&Led2)<<1));//最终LED动作
+}

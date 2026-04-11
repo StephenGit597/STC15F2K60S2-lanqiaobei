@@ -1,0 +1,226 @@
+DS1302 时间模块
+void DS1302_Set_Time(unsigned char hour,unsigned char minute,unsigned char second)
+{
+	unsigned char temo=0;
+	Write_Ds1302_Byte(0x8E,0x00);
+	temp=((hour/10)<<4)|((hour%10)&0x0F);
+        Write_Ds1302_Byte(0x84,temp);
+	temp=((minute/10)<<4)|((minute%10)&0x0F);
+	Write_Ds1302_Byte(0x82,temp);
+	temp=((second/10)<<4)|((second%10)&0x0F);
+	Write_Ds1302_Byte(0x80,temp);
+	Write_Ds1302_Byte(0x8E,0x80);
+}
+
+void DS1302_Get_time(void)
+{
+	unsigned char temp=0;
+	temp=Read_Ds1302_Byte(0x85);
+	hour=(temp>>4)*10+(temp&0x0F);
+	temp=Read_Ds1302_Byte(0x83);
+	minute=(temp>>4)*10+(temp&0x0F)；
+	temp=Read_Ds1302_Byte(0x81);
+	second=(temp>>4)*10+(temp&0x0F);
+}
+
+DS18B20 温度传感器模块
+void Get_Temperature_Ask(void)
+{
+	DS18B20_Init();
+	DS18B20_SendByte(0xCC);
+	DS18B20_SendByte(0x44);
+}
+
+float Get_Temperature_Receive(void)
+{
+	unsigned char low=0;
+	unsigned char high=0;
+	unsigned int raw=0;
+	float temperature=0.0f;
+
+	DS18B20_Init();
+	DS18B20_SendByte(0xCC);
+	DS18B20_SendByte(0x44);
+
+	low=DS18B20_ReadByte();
+	high=DS18B20_ReadByte();
+	raw=(high<<8)|low;
+
+	if(raw&0x8000)
+	{
+		raw=~raw+1;
+	}
+	temperature=((raw>>4)&0x00FF)+(raw^0x000F)*0.0625f;
+	return(temperature);
+}
+
+电压转换代码
+void Get_V_Ask(void)
+{
+	I2C_Start();
+	I2C_SendByte(0x90);
+	I2C_ReceiveAck();
+	
+	I2C_SendByte(0x41);
+	I2C_ReceiveAck();
+	I2C_Stop();
+}
+
+unsigned char Get_V_Receive(void)
+{
+	unsigned char V;
+
+	I2C_Start();
+	I2C_SendByte(0x91);
+	I2C_ReceiveAck();
+
+	V=I2C_ReceiveByte();
+	I2C_SendAck(1);
+	I2C_Stop();
+	return(V);
+}
+
+void V_Tran(unsigned char V)
+{
+	I2C_Start();
+	I2C_SendByte(0x90);
+	I2C_ReceiveAck();
+
+	I2C_SendByte(0x41);
+	I2C_ReceiveAck();
+
+	I2C_SendByte(V);
+	I2C_ReceiveAck();
+	I2C_Stop();
+}
+
+频率采集
+void Timer0_Init(void)
+{
+	AUXR|=0x80;
+	TMOD&=0xF0;
+	TMOD|=0x05;
+	TF0=0;
+	TH0=0;
+	TL0=0;
+}
+
+void Get_Fequence_Ask(void)
+{
+	TF0=0;
+	TH0=0x00;
+	TL0=0x00;
+	TR0=1;
+}
+
+unsigned int Get_Feqence_Receive(void)
+{
+	unsigned int Feq=0;
+	TR0=0;
+	Feq=(TH0<<8)|TL0;
+	TF0=0;
+	TH0=0x00;
+	TL0=0x00;
+	return(Feq);
+}
+
+数码管
+void Seg_Display(unsigned char sel,unsigned char data,unsigned char dot)
+{
+	if((sel==0)|(sel>8)|(data>16)|(dot>1))
+	{
+		return;
+	}
+	P2=(P2&0x1F)|0x00;
+	P0=0x01<<(sel-1);
+	US_Delay(1);
+	P2=(P2&0x1F)|0xC0;
+	US_Delay(3);
+	P2=(P2&0x1F)|0x00;
+	P0=segcode[data];
+	if(dot==1)
+	{
+		P07=0;
+	}
+	US_Delay(1);
+	P2=(P2&0x1F)|0xE0;
+	MS_Delay(1);
+	P0=0xFF;
+	P2=(P2&0x1F)|0x00;
+}
+
+LED
+void LED_Display(unsigned char Byte)
+{
+	P2=(P2&0x1F)|0x00;
+	P0=~Byte;
+	US_Delay(1);
+	P2=(P2&0x1F)|0x80;
+	US_Delay(3);
+	P2=(P2&0x1F)|0x00;
+}
+
+蜂鸣器继电器
+void Buffer_And_Relay_Control(unsigned char a,unsigned char b)
+{
+	unsigned char temp=0;
+	if((a>1)|(b>1))
+	{
+		return;
+	}
+	if(a==1)
+	{
+		temp|=0x40
+	}
+	if(b==1)
+	{
+		temp|=0x10;
+	}
+	P2=(P2&0x1F)|0x00;
+	P0=temp;
+	US_Delay(1);
+	P2=(P2&0x1F)|0xA0;
+	US_Delay(3);
+	P2=(P2&0x1F)|0x00;
+}
+
+矩阵按键
+unsigned char Scan_Key(void)
+{
+	unsigned char temp=0;
+	unsigned char value=0;
+	P44=0;
+	P42=1;
+	temp=(P3&0x0C)>>2;
+	P44=0;
+	P42=1;
+	temp=~(0xF0|(temp<<2)|((P3&0x0C)>>2));
+	switch(temp)
+	{
+		case 0x08:
+		{
+			value=1;
+			break;
+		}
+		case 0x04:
+		{
+			value=1;
+			break;
+		}
+		case 0x02:
+		{
+			value=1;
+			break;
+		}
+		case 0x01:
+		{
+			value=1;
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+	return(value);
+}
