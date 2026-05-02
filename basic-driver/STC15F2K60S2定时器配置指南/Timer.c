@@ -1,4 +1,4 @@
-#定时器0-定时器配置
+//#定时器0-定时器配置
 void Timer0Init(void)		//1毫秒@11.0592MHz
 {
 	AUXR |= 0x80;		//定时器时钟1T模式
@@ -14,7 +14,7 @@ void Timer0(void) interrupt 1
 {
 	currenttim++;
 }
-延时函数
+//延时函数
 void MS_Delay(unsigned int ms)//为阻塞延时
 {
 	unsigned long prev=currenttim+ms;
@@ -36,7 +36,7 @@ void US_Delay(unsigned int us)//为阻塞延时
 		_nop_();
 	}
 }
-#定时器1-定时器配置（自己开发板定时器1配置1T模式延时会不正确）
+//定时器1-定时器配置（自己开发板定时器1配置1T模式延时会不正确）
 void Timer1Init(void)		//1毫秒@11.0592MHz
 {
 	AUXR &= 0xBF;		//定时器时钟12T模式
@@ -52,7 +52,7 @@ void Timer1(void) interrupt 3
 {
 	currenttim++;
 }
-#定时器0配置为计数器，注计数脉冲来自P34，同时如果是定时器1引脚配置为计数器，计数脉冲来自P35
+//定时器0配置为计数器，注计数脉冲来自P34，同时如果是定时器1引脚配置为计数器，计数脉冲来自P35
 void Timer0_Init(void)
 {
 	AUXR=0X80;//1分频
