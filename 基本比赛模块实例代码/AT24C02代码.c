@@ -12,7 +12,7 @@ void AT24C02(unsigned char addr,unsigned char write_addr,unsigned char Byte)
 	IIC_SendByte(Byte);
 	IIC_WaitAck();
 	IIC_Stop();
-	Delay5ms();
+	Delay5ms();//在连续写入时一定要做好延时
 }
 
 多字节写入
@@ -33,7 +33,7 @@ void AT24C02(unsigned char addr,unsigned char write_addr,unsigned char Byte)
 		IIC_WaitAck();
 	}
 	IIC_Stop();
-	Delay5ms();
+	Delay5ms();//在连续写入时一定要做好延时
 }
 
 单字节读取
